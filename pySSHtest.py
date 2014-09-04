@@ -41,8 +41,8 @@ with open(os.path.join(sys.path[0], "myfile.csv"), "r+") as f:
         print commandresult
         
         print ip + " Done!"
-        f = open(os.path.join(sys.path[0], "logs.csv"), 'a+b')
-        f.write(commandresult)
+        f = open(os.path.join(sys.path[0], "logs.csv"), 'a+')
+        f.write(commandresult + '\n')
         f.close()
        # with open(os.path.join(sys.path[0], "logs.csv"), 'a+') as g:
             #writer = csv.writer(g, delimiter=',')
