@@ -7,34 +7,53 @@ import os
 import os.path
 import sys
 #Import statements
-
+ip = ""
+username = ""
+password = ""
+errorlog = ""
+sourcefile = ""
+destfile = ""
+jumpbox = ""
+command = ""
+userinputcommand = ""
 
 #Print commands for testing only
 def printtest():
     print ip
     print username
     print password
-    print command
-    print commandresult
+    #print command
+    #print commandresult
+    print sourcefile
+    print destfile
+    print errorlog
 
 def jumper():
+   global ip
+   global username
+   global password
+   global jumpbox
    jumpbox = raw_input("Do you need to SSH to a jump box first? (Y/N) ")
    if jumpbox == "Y" or jumpbox == "y":
       ip = raw_input("Type Jumpbox Ip address or FQDN ")
       username = raw_input("Type your username")
       password = raw_input("Type your password - THIS IS NOT ENCRYPTED. IT IS SHOWN ON THE SCREEN!! ")
-      main2()
+      paramikossh()
+      
    elif jumpbox != "Y" and jumpbox != "N" and jumpbox != "y" and jumpbox != "n":
       print "Not valid!!"
       jumper()
    else:
-      print "hello"
-     # break #if jumpbox = N
+      print "" #need to work out how to break out of here...
       
          
 def createfiles():
+      global sourcefile
+      global destfile
+      global errorlog
+      global userinputcommand
       userinputcommand = raw_input("Enter commands here separated by a semi colen! ") #commands to be run on remote system
-      sourcefile = "" # sets sourcefile to be null
+      #sourcefile = "" # sets sourcefile to be null
       sourcefile = raw_input("Type source directory path here. Leave blank for current dir. File name must be input.csv ") #directory where the source is
 
       if sourcefile == "": #if source is null, it is set to the current dir
@@ -76,16 +95,34 @@ def createfiles():
 
 
 def main():
-      with open(sourcefile, 'rb') as f: #gets the source file
-       reader = csv.DictReader(f) #create instance of csv reader
+    print sourcefile
+    global sourcefile
+    global command
+    global userinputcommand
+    global ip
+    global username
+    global password
+    with open(sourcefile, 'rb') as f: #gets the source file
+       reader = csv.DictReader(f, delimiter = ",") #create instance of csv reader
        for row in reader: #for loop to iterate through the source
-          ip = row['ip']
+          ip = row["ip"]
           username = row['username']
           password = row['password']
           print "Finished reading CSV File!"
           command = userinputcommand
-def main2():
-          print "Starting SSH Session to " + ip + "!" 
+          paramikossh()
+          
+
+          
+def paramikossh():
+          global jumpbox
+          global ip
+          global username
+          global password
+          global command
+          global commandresult
+          
+         # print "Starting SSH Session to " + ip + "!" 
           remote_conn_pre=paramiko.SSHClient() #creates an instance of paramiko SSH Client
           remote_conn_pre 
           remote_conn_pre.set_missing_host_key_policy(paramiko.AutoAddPolicy()) #auto accepts any missing host keys
@@ -95,9 +132,57 @@ def main2():
              remote_conn = remote_conn_pre.invoke_shell()
              time.sleep(1)
              nulloutput = remote_conn.recv(50000)
-             remote_conn.send("\n")
              remote_conn.send(command)
+             remote_conn.send("\n")
              time.sleep(3)
+             commandresult = remote_conn.recv(50000)
+             print ip + " Done!"
+             with open(destfile, 'ab') as g: #print results to dest file.
+              timenow = datetime.datetime.now()
+              writer = csv.writer(g)
+              writer.writerow([ip,username,password,command,commandresult, timenow])
+              print "Data successfully saved!!"
+              if jumpbox == "Y" or jumpbox == "y":
+                main()
+                jumpboxssh()
+              else:
+                print ""
+                
+####################################################################THIS EXCEPT IS BROKEN AND NEEDS TO BE FIXED##################################################                
+          except: #If any ssh error occurs, print error to errorlog
+                if jumpbox == "Y" or jumpbox == "y":
+                    print "Connection to Jumpbox failed :("
+                    command = "NONE"
+                    commandresult = "SSH TO JUMPBOX FAILED"
+                    with open(errorlog, 'ab') as g:
+                     timenow = datetime.datetime.now()
+                     writer = csv.writer(g)
+                     writer.writerow([ip,username,password,command,commandresult, timenow])
+                    jumper()
+                else:
+                    print "Connection Failed :( Not sure why..."
+                    command = "NONE"
+                    commandresult = "SSH FAILED"
+                    with open(errorlog, 'ab') as g:
+                     timenow = datetime.datetime.now()
+                     writer = csv.writer(g)
+                     writer.writerow([ip,username,password,command,commandresult, timenow])
+
+
+#the var "command result" = the command in the csv
+####################################################################THIS EXCEPT IS BROKEN AND NEEDS TO BE FIXED##################################################
+
+
+                     
+def jumpboxssh():
+          try: #loop to try and preform commands on target
+             nulloutput = remote_conn.recv(50000)
+             remote_conn.send("\n")
+             login = ("ssh " + username + "@" + ip)
+             remote_conn.send(login)
+             remote_conn.send(password)
+             remote_conn.send(command)
+             print "SSH Authenticated!!"
              commandresult = remote_conn.recv(50000)
              print ip + " Done!"
              with open(destfile, 'ab') as g: #print results to dest file.
@@ -113,6 +198,8 @@ def main2():
                  timenow = datetime.datetime.now()
                  writer = csv.writer(g)
                  writer.writerow([ip,username,password,command,commandresult, timenow])
+
+
 def final():
       printfinal = raw_input("All complete!! Press any key to close the program...") #should be printed when all lines in source have been tried
       if printfinal == "*" or "\n":
@@ -121,11 +208,9 @@ def final():
          print "I don't know how you got here...but I'm closing anyway!"
          sys.exit(100)
 
-
+createfiles()
 jumper()
-createfiles()    
 main()
-main2()
 final()
 
 
