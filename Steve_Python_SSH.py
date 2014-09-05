@@ -120,9 +120,8 @@ def paramikossh():
           global username
           global password
           global command
-          global commandresult
           
-         # print "Starting SSH Session to " + ip + "!" 
+          print "Starting SSH Session to " + ip + "!" 
           remote_conn_pre=paramiko.SSHClient() #creates an instance of paramiko SSH Client
           remote_conn_pre 
           remote_conn_pre.set_missing_host_key_policy(paramiko.AutoAddPolicy()) #auto accepts any missing host keys
@@ -130,9 +129,9 @@ def paramikossh():
              remote_conn_pre.connect(ip, username=username, password=password)
              print "SSH Authenticated!!"
              remote_conn = remote_conn_pre.invoke_shell()
-             time.sleep(1)
+             time.sleep(3)
              nulloutput = remote_conn.recv(50000)
-             remote_conn.send(command)
+             remote_conn.send(command + "\n")
              remote_conn.send("\n")
              time.sleep(3)
              commandresult = remote_conn.recv(50000)
@@ -148,7 +147,6 @@ def paramikossh():
               else:
                 print ""
                 
-####################################################################THIS EXCEPT IS BROKEN AND NEEDS TO BE FIXED##################################################                
           except: #If any ssh error occurs, print error to errorlog
                 if jumpbox == "Y" or jumpbox == "y":
                     print "Connection to Jumpbox failed :("
@@ -169,20 +167,17 @@ def paramikossh():
                      writer.writerow([ip,username,password,command,commandresult, timenow])
 
 
-#the var "command result" = the command in the csv
-####################################################################THIS EXCEPT IS BROKEN AND NEEDS TO BE FIXED##################################################
-
-
+#############################Not tested##########################################
                      
 def jumpboxssh():
           try: #loop to try and preform commands on target
              nulloutput = remote_conn.recv(50000)
              remote_conn.send("\n")
-             login = ("ssh " + username + "@" + ip)
+             login = ("ssh " + username + "@" + ip + "\n")
              remote_conn.send(login)
-             remote_conn.send(password)
-             remote_conn.send(command)
+             remote_conn.send(password + "\n")
              print "SSH Authenticated!!"
+             remote_conn.send(command + "\n")
              commandresult = remote_conn.recv(50000)
              print ip + " Done!"
              with open(destfile, 'ab') as g: #print results to dest file.
@@ -198,6 +193,7 @@ def jumpboxssh():
                  timenow = datetime.datetime.now()
                  writer = csv.writer(g)
                  writer.writerow([ip,username,password,command,commandresult, timenow])
+#############################Not tested##########################################
 
 
 def final():
@@ -211,6 +207,7 @@ def final():
 createfiles()
 jumper()
 main()
+print commandrresult
 final()
 
 
