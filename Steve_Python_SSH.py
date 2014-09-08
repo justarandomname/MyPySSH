@@ -142,12 +142,11 @@ def paramikossh():
               writer.writerow([ip,username,password,command,commandresult, timenow])
               print "Data successfully saved!!"
               if jumpbox == "Y" or jumpbox == "y":
-                main()
                 jumpboxssh()
               else:
                 print ""
                 
-          except: #If any ssh error occurs, print error to errorlog
+          except: """#If any ssh error occurs, print error to errorlog
                 if jumpbox == "Y" or jumpbox == "y":
                     print "Connection to Jumpbox failed :("
                     command = "NONE"
@@ -164,35 +163,55 @@ def paramikossh():
                     with open(errorlog, 'ab') as g:
                      timenow = datetime.datetime.now()
                      writer = csv.writer(g)
-                     writer.writerow([ip,username,password,command,commandresult, timenow])
+                     writer.writerow([ip,username,password,command,commandresult, timenow])"""
 
 
 #############################Not tested##########################################
-                     
 def jumpboxssh():
+    print sourcefile
+    global sourcefile
+    global command
+    global userinputcommand
+    global ip
+    global username
+    global password
+    with open(sourcefile, 'rb') as f: #gets the source file
+       reader = csv.DictReader(f, delimiter = ",") #create instance of csv reader
+       for row in reader: #for loop to iterate through the source
+          ip = row["ip"]
+          username = row['username']
+          password = row['password']
+          print "Finished reading CSV File!"
+          command = userinputcommand
           try: #loop to try and preform commands on target
              nulloutput = remote_conn.recv(50000)
              remote_conn.send("\n")
              login = ("ssh " + username + "@" + ip + "\n")
+             print login
              remote_conn.send(login)
+             #testing t = remote_conn.recv(500)
+             #testing print t
              remote_conn.send(password + "\n")
+             #testing t = remote_conn.recv(500)
+             #testing print t
              print "SSH Authenticated!!"
              remote_conn.send(command + "\n")
              commandresult = remote_conn.recv(50000)
+             remote_conn.send("exit" + "\n")
              print ip + " Done!"
              with open(destfile, 'ab') as g: #print results to dest file.
               timenow = datetime.datetime.now()
               writer = csv.writer(g)
               writer.writerow([ip,username,password,command,commandresult, timenow])
               print "Data successfully saved!!"
-          except: #If any ssh error occurs, print error to errorlog
+          except: """#If any ssh error occurs, print error to errorlog
                 print "Connection Failed :( Not sure why..."
                 command = "NONE"
                 commandresult = "SSH FAILED"
                 with open(errorlog, 'ab') as g:
                  timenow = datetime.datetime.now()
                  writer = csv.writer(g)
-                 writer.writerow([ip,username,password,command,commandresult, timenow])
+                 writer.writerow([ip,username,password,command,commandresult, timenow])"""
 #############################Not tested##########################################
 
 
@@ -206,8 +225,10 @@ def final():
 
 createfiles()
 jumper()
-main()
-print commandrresult
+
+if jumpbox == "y" or jumpbox == "Y":
+    ""
+else:
+   main()
+   
 final()
-
-
